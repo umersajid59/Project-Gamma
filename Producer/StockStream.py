@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[11]:
 
 
 from kafka import KafkaProducer,KafkaClient
@@ -17,7 +17,7 @@ from confluent_kafka.admin import AdminClient
 import hashlib
 
 
-# In[4]:
+# In[17]:
 
 
 def onOpen(ws):
@@ -41,13 +41,12 @@ def onMsg(ws,message):
         print(message)
         return
     else:
-        if(time.time()-startTime)<30:
+        if(time.time()-startTime)<10:
             print(message)
             try:
-                future.append(producer.send(topicName, message.encode('utf-8')))
+                producer.send(topicName, value=message.encode('utf-8'))
                 return True
             except Exception as ex:
-                producer.close()
                 logging.error(str(ex))
         else:
             producer.close()
@@ -57,7 +56,7 @@ def onClose(ws):
     print("connection Closed")
 
 
-# In[7]:
+# In[19]:
 
 
 if __name__ == "__main__":
@@ -72,23 +71,17 @@ if __name__ == "__main__":
         logging.error(RuntimeError())
     else:
         logging.info(topics)
-    future =[] 
     #websocket for data stream
     startTime =time.time()
     socket = "wss://data.alpaca.markets/stream"
     ws = websocket.WebSocketApp(socket,on_open=onOpen, on_close=onClose, on_message=onMsg)
+    
     try:
         producer=KafkaProducer(bootstrap_servers=" localhost:9092")
-        topicName="stockData"
+        topicName="test-topic"
     except KafkaError:
-        logging.error(KafkaError)
+        logging.error(KafkaError+'\n')
     ws.run_forever()
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:

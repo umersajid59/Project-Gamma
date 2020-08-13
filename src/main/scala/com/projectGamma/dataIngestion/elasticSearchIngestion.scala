@@ -1,4 +1,4 @@
-package consumer.stockData
+package com.projectGamma.dataIngestion
 
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext._
@@ -11,13 +11,12 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 import org.apache.spark.streaming
+import org.elasticsearch.spark._
 import java.sql.Timestamp
-import com.mongodb.spark._
-import com.mongodb.spark.config._
 import scala.util.Try
 import java.io.{File, PrintWriter}
 
-object streamingWriteToMongo {
+object elasticSearchIngestion {
   def main(args : Array[String]){
     //creating log file
     val lgWrite = new PrintWriter(new File("consumerLog.log"))
@@ -27,23 +26,25 @@ object streamingWriteToMongo {
     //creater logger for spark and kafka
     lgWrite.write(Logger.getLogger("org").setLevel(Level.ERROR).toString())
     lgWrite.write(Logger.getLogger("kafka").setLevel(Level.ALL).toString())
-    lgWrite.write(Logger.getLogger("mongo").setLevel(Level.ERROR).toString())
     
-    //creating Sparksession
-    val spark: SparkSession = SparkSession.builder()
+    
+    val spark = SparkSession.builder()
       .master("local[*]")
       .appName("kafkaStreamTest")
+      .config("es.index.auto.create", "true")
       .getOrCreate()
     
+      
     //creating dummy dataframe for testing  
     import spark.implicits._
     val someDF = Seq(("LOLL",287.33,17,2, Timestamp.valueOf("2020-06-29 15:26:48"))).toDF("t", "p","x","s","dt")
+    
     
     //crating connection to kafka and reading stream to dataframe
     val df = spark.readStream
         .format("kafka")
         .option("kafka.bootstrap.servers", "localhost:9092")
-        .option("subscribe", "stockData")
+        .option("subscribe", "test-topic")
         .option("startingOffsets", "earliest") // From starting
         .load()
     
@@ -70,37 +71,25 @@ object streamingWriteToMongo {
     assert(someDF.schema("x").dataType == data.schema("exchange_id").dataType)
     assert(someDF.schema("s").dataType == data.schema("trade_size").dataType)                         
   
-   /*APPL.writeStream
-      .format("console")
-      .outputMode("append")
-      .start()
-      .awaitTermination(10000)*/
-      
- 
-   /*APPL.writeStream
-   .format("json")
-   .option("path", "C:\\Users\\umers\\scala-workspace\\consumer\\json_data")
-   .option("checkpointLocation","C:\\Users\\umers\\scala-workspace\\consumer\\json_data")
-   .partitionBy("ticker")
-   .start()
-   .awaitTermination(50000)*/
-    
-   //confirming stream status
    if(data.isStreaming){
      lgWrite.write("data is streaming")
    }
-   try{                          
-     data.filter(to_date(data("date_time")) === x.toString())
-     .writeStream
-     .foreachBatch{
-        (batchdf:org.apache.spark.sql.DataFrame, batchid:Long)=>
-          MongoSpark.save(batchdf.write.mode("append"), WriteConfig(Map("uri" -> "mongodb://127.0.0.1/mydb.stockData")))
-      }
-     .start()
-     .awaitTermination()
-   }catch{
-     case e: exceptions.MongoClientCreationException=>lgWrite.write("error creating mongodb client")
-   }
-   lgWrite.close()
+   
+   /*data.writeStream
+      .format("console")
+      .outputMode("append")
+      .start()
+      .awaitTermination()*/
+   val d = data.filter(to_date(data("date_time")) === x.toString())
+   .writeStream
+   .format("org.elasticsearch.spark.sql")
+   .outputMode("append")
+   .option("es.nodes","localhost")
+   .option("es.port","9200")
+   .option("checkpointLocation","/tmp/")
+   .option("es.resource", "index/type")
+   .start()
+   
+   d.awaitTermination()
   }
 }
