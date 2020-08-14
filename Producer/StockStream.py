@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[11]:
+# In[1]:
 
 
 from kafka import KafkaProducer,KafkaClient
@@ -17,7 +17,7 @@ from confluent_kafka.admin import AdminClient
 import hashlib
 
 
-# In[17]:
+# In[2]:
 
 
 def onOpen(ws):
@@ -41,7 +41,7 @@ def onMsg(ws,message):
         print(message)
         return
     else:
-        if(time.time()-startTime)<10:
+        if(time.time()-startTime)<30:
             print(message)
             try:
                 producer.send(topicName, value=message.encode('utf-8'))
@@ -56,7 +56,7 @@ def onClose(ws):
     print("connection Closed")
 
 
-# In[19]:
+# In[27]:
 
 
 if __name__ == "__main__":
@@ -79,9 +79,22 @@ if __name__ == "__main__":
     try:
         producer=KafkaProducer(bootstrap_servers=" localhost:9092")
         topicName="test-topic"
+        #testCode
+        x = '{"stream":"T.AAPL","data":{"ev":"T","T":"AAPL","i":"3041","x":2,"p":389.32,"s":1,"t":1596126853339000000,"c":[37],"z":3}}'
+        i=0
+        while i<100:
+            print(message)
+            producer.send(topicName, value=x.encode("utf-8"))
+            i=i+1
     except KafkaError:
         logging.error(KafkaError+'\n')
-    ws.run_forever()
+    #ws.run_forever()
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:

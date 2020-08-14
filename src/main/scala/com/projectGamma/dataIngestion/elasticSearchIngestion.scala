@@ -45,7 +45,7 @@ object elasticSearchIngestion {
         .format("kafka")
         .option("kafka.bootstrap.servers", "localhost:9092")
         .option("subscribe", "test-topic")
-        .option("startingOffsets", "earliest") // From starting
+        //.option("startingOffsets", "earliest") // From starting
         .load()
     
     //print schema of kafka stream
@@ -80,14 +80,14 @@ object elasticSearchIngestion {
       .outputMode("append")
       .start()
       .awaitTermination()*/
-   val d = data.filter(to_date(data("date_time")) === x.toString())
-   .writeStream
+   //val d = data.filter(to_date(data("date_time")) === x.toString())
+   val d = data.writeStream
    .format("org.elasticsearch.spark.sql")
    .outputMode("append")
    .option("es.nodes","localhost")
    .option("es.port","9200")
-   .option("checkpointLocation","/tmp/")
-   .option("es.resource", "index/type")
+   .option("checkpointLocation","C:\\Users\\umers\\scala-workspace\\dataIngestion\\json_data")
+   .option("es.resource", "index_test/type")
    .start()
    
    d.awaitTermination()
