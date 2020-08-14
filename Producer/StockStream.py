@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[35]:
 
 
 from kafka import KafkaProducer,KafkaClient
@@ -17,7 +17,7 @@ from confluent_kafka.admin import AdminClient
 import hashlib
 
 
-# In[2]:
+# In[54]:
 
 
 def onOpen(ws):
@@ -31,7 +31,7 @@ def onOpen(ws):
     
     listenMsg = {
         "action": "listen", 
-        "data": {"streams": ["T.TSLA","T.AAPL","T.MSFT"]}
+        "data": {"streams": ["T.TSLA","T.AAPL","T.MSFT","T.QCOM"]}
     }
 
     ws.send(json.dumps(listenMsg))
@@ -54,9 +54,18 @@ def onMsg(ws,message):
             
 def onClose(ws):
     print("connection Closed")
+    
+def testCode():
+    i=0
+    while i<30:
+        x = '{"stream":"T.AAPL","data":{"ev":"T","T":"AAPL","i":"3041","x":2,"p":389.32,"s":1,"t":1596126853339000000,"c":[37],"z":3},"loop":'+str(i)+'}' 
+        print(x)
+        producer.send(topicName, value=x.encode("utf-8"))
+        i=i+1
+    producer.close()
 
 
-# In[27]:
+# In[57]:
 
 
 if __name__ == "__main__":
@@ -79,16 +88,10 @@ if __name__ == "__main__":
     try:
         producer=KafkaProducer(bootstrap_servers=" localhost:9092")
         topicName="test-topic"
-        #testCode
-        x = '{"stream":"T.AAPL","data":{"ev":"T","T":"AAPL","i":"3041","x":2,"p":389.32,"s":1,"t":1596126853339000000,"c":[37],"z":3}}'
-        i=0
-        while i<100:
-            print(message)
-            producer.send(topicName, value=x.encode("utf-8"))
-            i=i+1
+        #testCode()
     except KafkaError:
         logging.error(KafkaError+'\n')
-    #ws.run_forever()
+    ws.run_forever()
 
 
 # In[ ]:

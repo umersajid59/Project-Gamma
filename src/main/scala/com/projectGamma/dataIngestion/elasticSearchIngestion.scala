@@ -7,17 +7,19 @@ import org.apache.spark.sql.SparkSession
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.streaming._
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 import org.apache.spark.streaming
 import org.elasticsearch.spark._
 import java.sql.Timestamp
+import java.util.Date
 import scala.util.Try
 import java.io.{File, PrintWriter}
 
 object elasticSearchIngestion {
   def main(args : Array[String]){
+    
     //creating log file
     val lgWrite = new PrintWriter(new File("consumerLog.log"))
     lgWrite.write("consumer log file\n")
@@ -27,11 +29,9 @@ object elasticSearchIngestion {
     lgWrite.write(Logger.getLogger("org").setLevel(Level.ERROR).toString())
     lgWrite.write(Logger.getLogger("kafka").setLevel(Level.ALL).toString())
     
-    
     val spark = SparkSession.builder()
       .master("local[*]")
       .appName("kafkaStreamTest")
-      .config("es.index.auto.create", "true")
       .getOrCreate()
     
       
@@ -45,7 +45,6 @@ object elasticSearchIngestion {
         .format("kafka")
         .option("kafka.bootstrap.servers", "localhost:9092")
         .option("subscribe", "test-topic")
-        //.option("startingOffsets", "earliest") // From starting
         .load()
     
     //print schema of kafka stream
@@ -75,19 +74,24 @@ object elasticSearchIngestion {
      lgWrite.write("data is streaming")
    }
    
+   data.printSchema()
+   
    /*data.writeStream
       .format("console")
       .outputMode("append")
       .start()
       .awaitTermination()*/
+   //testing
    //val d = data.filter(to_date(data("date_time")) === x.toString())
-   val d = data.writeStream
+   ///
+   val d = data.filter(to_date(data("date_time")) === x.toString())
+   .writeStream
    .format("org.elasticsearch.spark.sql")
    .outputMode("append")
    .option("es.nodes","localhost")
    .option("es.port","9200")
    .option("checkpointLocation","C:\\Users\\umers\\scala-workspace\\dataIngestion\\json_data")
-   .option("es.resource", "index_test/type")
+   .option("es.resource", "index_test/_doc")
    .start()
    
    d.awaitTermination()

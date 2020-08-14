@@ -1,0 +1,27 @@
+PUT /index_test
+PUT /index_test/_mapping
+{
+  "properties": {
+        "date_time": {
+          "type": "date"
+        },
+        "exchange_id": {
+          "type": "long"
+        },
+        "price": {
+          "type": "float"
+        },
+        "ticker": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "trade_size": {
+          "type": "long"
+        }
+      }
+}
